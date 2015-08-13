@@ -47,28 +47,6 @@ void onInit(CRules@ this)
 void onRestart(CRules@ this)
 {
 	this.SetCurrentState(GAME);
-	Vec2f[] skeletons;
-	CMap@ map = getMap();
-	map.getMarkers("skele", skeletons );
-	Vec2f[] zombies;
-	map.getMarkers("zomb", zombies );
-	Vec2f[] zombieknights;
-	map.getMarkers("zombknight", zombieknights );
-	for (uint i=0; i < skeletons.length; i++)
-	{
-		Vec2f spos = skeletons[i];
-		CBlob@ NelChest = server_CreateBlob( "Skeleton" , 255, spos);
-	}
-	for (uint i=0; i < zombies.length; i++)
-	{
-		Vec2f spos = zombies[i];
-		CBlob@ NelChest = server_CreateBlob( "Zombie" , 255, spos);
-	}
-	for (uint i=0; i < zombieknights.length; i++)
-	{
-		Vec2f spos = zombieknights[i];
-		CBlob@ NelChest = server_CreateBlob( "ZombieKnight" , 255, spos);
-	}
 }
 void onNewPlayerJoin(CRules@ this, CPlayer@ player)
 {
