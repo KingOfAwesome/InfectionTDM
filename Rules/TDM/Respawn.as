@@ -1,11 +1,11 @@
 
 
 #define SERVER_ONLY
-CBlob@ SpawnPlayer(CPlayer@ p, Vec2f pos)
+CBlob@ SpawnPlayer(CPlayer@ p, Vec2f pos, u8 team)
 {
 	print("TODO: spawn player: " + p.getUsername() + " at (" + pos.x + "," + pos.y + ")");
 
-	CBlob@ blob = server_CreateBlob("knight", 0, pos);
+	CBlob@ blob = server_CreateBlob("knight", team, pos);
 	blob.server_SetPlayer(p);
 	
 	return blob;
@@ -172,16 +172,8 @@ void DoRespawns(CPlayer@[] players)
 			CMap@ map = getMap();
 			map.getMarkers("blue main spawn", teleports );
 			
-			Vec2f respawnPos = teleports[0];
-			CBlob@ playerBlob = SpawnPlayer(player, respawnPos);
-
-			if (playerBlob !is null)
-			{
-				GiveSpawnResources(playerBlob);
-			
-				playerBlob.server_setTeamNum( player.getNetworkID() + 7 );
-				
-			}
+			Vec2f respawnPos = teleports[i];
+			CBlob@ playerBlob = SpawnPlayer(player, respawnPos, i);
 		}
 		
 	}
