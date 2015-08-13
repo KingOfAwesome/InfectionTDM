@@ -48,10 +48,11 @@ void onRestart(CRules@ this)
 {
 	this.SetCurrentState(GAME);
 }
+
 void onNewPlayerJoin(CRules@ this, CPlayer@ player)
 {
-	player.server_setTeamNum(0);
-	player.set_s16("spawn time", spawnTime);
+	player.server_setTeamNum(255);
+	//player.set_s16("spawn time", spawnTime);
 	//player.Sync("spawn time", true);
 }
 void onPlayerRequestTeamChange(CRules@ this, CPlayer@ player, u8 newteam)
@@ -137,22 +138,13 @@ void DoRespawns(CPlayer@[] players)
 	{
 		CPlayer@ player = players[i];
 		
-		s16 playerSpawnTime = player.get_s16("spawn time");
-		if(playerSpawnTime > 0)
-		{
-			playerSpawnTime--;
-			player.set_s16("spawn time", playerSpawnTime);
-			//player.Sync("spawn time", true);
-		}
-		else
-		{
-			Vec2f[] teleports;
-			CMap@ map = getMap();
-			map.getMarkers("blue main spawn", teleports );
+		Vec2f[] teleports;
+		CMap@ map = getMap();
+		map.getMarkers("blue main spawn", teleports );
 			
-			Vec2f respawnPos = teleports[i];
-			CBlob@ playerBlob = SpawnPlayer(player, respawnPos, i);
-		}
+		Vec2f respawnPos = teleports[i];
+		CBlob@ playerBlob = SpawnPlayer(player, respawnPos, i);
+		
 		
 	}
 }
