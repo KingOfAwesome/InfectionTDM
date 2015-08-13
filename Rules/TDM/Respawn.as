@@ -39,6 +39,7 @@ void onInit(CRules@ this)
 void onRestart(CRules@ this)
 {
 	this.SetCurrentState(GAME);
+	DoRespawns(collectPlayers(this));
 }
 
 void onNewPlayerJoin(CRules@ this, CPlayer@ player)
