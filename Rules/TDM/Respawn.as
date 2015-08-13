@@ -15,30 +15,25 @@ int gameovertimer = 10;
 u32 limit = 11;
 void onTick(CRules@ this)
 {
-	if (getGameTime() % limit != 0)
-	{
-		return;
-	}
+	u8 StartTeam;
 	CPlayer@[] players = collectPlayers(this);
-	if (this.isMatchRunning())
-	{		
-		CPlayer@[] dead = filterNeedRespawn(players);
-		if (dead.length > 0)
-		{
-			DoRespawns(dead);
-		}
-	}
-	else if (this.isGameOver())
+	for (uint i = 0; i < players.length; i++)
 	{
-		
-		gameovertimer -= limit;
-	
-		if (gameovertimer <= 0)
-		{
-			LoadNextMap();
+		if (i == 0){
+			StartTeam = players[0].getBlob().getTeamNum();
 		}
+		if (StartTeam != players[i].getBlob().getTeamNum()){
+			break;
+		}
+		CPlayer@ player = players[i];
+		
+		Vec2f[] teleports;
+		CMap@ map = getMap();
+		map.getMarkers("blue main spawn", teleports );
+			
+		Vec2f respawnPos = teleports[i];
+		CBlob@ playerBlob = SpawnPlayer(player, respawnPos, i);
 	}
-
 }
 void onInit(CRules@ this)
 {
