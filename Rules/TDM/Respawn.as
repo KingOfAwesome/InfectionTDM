@@ -25,14 +25,10 @@ void onTick(CRules@ this)
 		if (StartTeam != players[i].getBlob().getTeamNum()){
 			break;
 		}
-		CPlayer@ player = players[i];
-		
-		Vec2f[] teleports;
-		CMap@ map = getMap();
-		map.getMarkers("blue main spawn", teleports );
-			
-		Vec2f respawnPos = teleports[i];
-		CBlob@ playerBlob = SpawnPlayer(player, respawnPos, i);
+		if(i == players.length)
+		{
+			LoadNextMap();
+		}
 	}
 }
 void onInit(CRules@ this)
