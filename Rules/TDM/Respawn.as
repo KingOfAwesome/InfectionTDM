@@ -22,7 +22,8 @@ void onTick(CRules@ this)
 		if (i == 0){
 			StartTeam = players[0].getBlob().getTeamNum();
 		}
-		if (StartTeam != players[i].getBlob().getTeamNum()){
+		if (StartTeam != players[i].getBlob().getTeamNum())
+		{
 			break;
 		}
 		if(i == players.length)
@@ -128,15 +129,11 @@ void DoRespawns(CPlayer@[] players)
 	for (uint i = 0; i < players.length; i++)
 	{
 		CPlayer@ player = players[i];
-		
 		Vec2f[] teleports;
 		CMap@ map = getMap();
 		map.getMarkers("blue main spawn", teleports );
-			
 		Vec2f respawnPos = teleports[i];
 		CBlob@ playerBlob = SpawnPlayer(player, respawnPos, i);
-		
-		
 	}
 }
 
