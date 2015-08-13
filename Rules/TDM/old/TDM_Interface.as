@@ -19,22 +19,6 @@ f32 getKDR(CPlayer@ p)
 	return p.getKills() / Maths::Max(f32(p.getDeaths()), 1.0f);
 }
 
-u32 getNameColour(CPlayer@ p)
-{
-	CSecurity@ security = getSecurity();
-	string devs = "geti;mm;flieslikeabrick;furai;jrgp;";
-	string admins = "admin;superadmin;rcon;";
-	string seclev = security.getPlayerSeclev(p).getName().toLower();
-	u32[] namecolours = {0xffbb00ff, 0xff88DD33, 0xffff5522, 0xffffEE44, 0xffffffff};
-	u32 namecolour = devs.find(p.getUsername().toLower() + ";") != -1 ? namecolours[0] :
-	                 seclev == "guard" ? namecolours[1] :
-	                 admins.toLower().find(seclev + ";") != -1 ? namecolours[2] :
-	                 p.isMyPlayer() ? namecolours[3] : namecolours[4];
-
-	return namecolour;
-
-}
-
 void onRenderScoreboard(CRules@ this)
 {
 	//sort players
@@ -45,7 +29,7 @@ void onRenderScoreboard(CRules@ this)
 		CPlayer@ p = getPlayer(i);
 		f32 kdr = getKDR(p);
 		bool inserted = false;
-		if (p.getTeamNum() == this.getSpectatorTeamNum())
+		if(p.getTeamNum() == this.getSpectatorTeamNum())
 		{
 			spectators.push_back(p);
 			continue;
@@ -68,7 +52,7 @@ void onRenderScoreboard(CRules@ this)
 	f32 stepheight = 16;
 	Vec2f topleft(100, 150);
 	Vec2f bottomright(getScreenWidth() - 100, topleft.y + (sortedplayers.length + (spectators.length == 0 ? 0 : 2) + 3.5) * stepheight);
-	GUI::DrawPane(topleft, bottomright, SColor(0xffc0c0c0));
+	GUI::DrawRectangle(topleft, bottomright);
 
 	//offset border
 
@@ -78,32 +62,26 @@ void onRenderScoreboard(CRules@ this)
 
 	//draw spectators
 
-	GUI::SetFont("menu");
-
-	if (spectators.length > 0)
+	if(spectators.length > 0)
 	{
-		f32 specy = bottomright.y - stepheight * 2;
+		f32 specy = bottomright.y-stepheight*2;
 		GUI::DrawLine2D(Vec2f(topleft.x, specy), Vec2f(bottomright.x, specy), SColor(0xff404040));
 
 		Vec2f textdim;
 		string s = "Spectators:";
 		GUI::GetTextDimensions(s, textdim);
-
 		GUI::DrawText(s, Vec2f(topleft.x, specy), SColor(0xffaaaaaa));
 
-		f32 specx = topleft.x + textdim.x + 10;
+		f32 specx = topleft.x + textdim.x + 20;
 		for (u32 i = 0; i < spectators.length; i++)
 		{
 			CPlayer@ p = spectators[i];
-			if (specx < bottomright.x - 100)
+			if(specx > bottomright.y - 100)
 			{
 				string name = p.getCharacterName();
-				if (i != spectators.length - 1)
-					name += ",";
 				GUI::GetTextDimensions(name, textdim);
-				u32 namecolour = getNameColour(p);
-				GUI::DrawText(name, Vec2f(specx, specy), SColor(namecolour));
-				specx += textdim.x + 10;
+				GUI::DrawText(name, Vec2f(specx, specy), SColor(0xffaaaaaa));
+				specx += textdim.x + 20;
 			}
 			else
 			{
@@ -122,10 +100,6 @@ void onRenderScoreboard(CRules@ this)
 	GUI::DrawText("KDR", Vec2f(bottomright.x - 100, topleft.y), SColor(0xffffffff));
 
 	topleft.y += stepheight * 0.5f;
-
-	CControls@ controls = getControls();
-	Vec2f mousePos = controls.getMouseScreenPos();
-
 	//draw players
 	for (u32 i = 0; i < sortedplayers.length; i++)
 	{
@@ -136,57 +110,46 @@ void onRenderScoreboard(CRules@ this)
 
 		Vec2f lineoffset = Vec2f(0, -2);
 
-		u32[] teamcolours = {0xff6666ff, 0xffff6666};
-		u32 playercolour = (p.getBlob() is null || p.getBlob().hasTag("dead")) ? 0xffaaaaaa :
-		                   teamcolours[p.getBlob().getTeamNum() % teamcolours.length];
+		//it's white, cause we only have a neutral team
+		u32[] teamcolours = {0xffFFFFFF};
 
-		GUI::DrawLine2D(Vec2f(topleft.x, bottomright.y + 1) + lineoffset, Vec2f(bottomright.x, bottomright.y + 1) + lineoffset, SColor(0xff404040));
-		GUI::DrawLine2D(Vec2f(topleft.x, bottomright.y) + lineoffset, bottomright + lineoffset, SColor(playercolour));
-
-		string tex = "";
-		u16 frame = 0;
-		Vec2f framesize;
-		if (p.isMyPlayer())
+		//main colors
+		u32 playercolour; 
+		if (p !is null)
 		{
-			tex = "ScoreboardIcons.png";
-			frame = 4;
-			framesize.Set(16, 16);
-		}
-		else
-		{
-			tex = p.getScoreboardTexture();
-			frame = p.getScoreboardFrame();
-			framesize = p.getScoreboardFrameSize();
-		}
-		if (tex != "")
-		{
-			GUI::DrawIcon(tex, frame, framesize, topleft, 0.5f, p.getTeamNum());
-		}
-
-		string playername = "";
-		if (mousePos.y > topleft.y && mousePos.y < topleft.y + 15)
-		{
-			playername = " " + p.getUsername();
-		}
-		else
-		{
-			playername = p.getCharacterName();
-			string clantag = p.getClantag();
-			if (clantag.length > 0)
+			if (p.getBlob() is null || p.getBlob().hasTag("dead") )
 			{
-				playername = clantag + " " + playername;
+				if (p.getUsername() == "Diprog")
+					playercolour = 0xff009E51;
+				else if (p.isMod())
+					playercolour = 0xff642400;
+				else
+					playercolour = 0xffA5A5A5;
+			}
+			else
+			{
+				playercolour = (p.getUsername() == "Diprog") ? 0xff00FF8C :
+			       	p.isMod() ? 0xffF95A00 :
+			        	p.isMyPlayer() ? 0xffFFEB8C :
+	                   	        	teamcolours[p.getBlob().getTeamNum() % teamcolours.length];
 			}
 		}
+		//dead colors
 
-		//have to calc this from ticks
-		s32 ping_in_ms = s32(p.getPing() * 1000.0f / 30.0f);
+		GUI::DrawLine2D(Vec2f(topleft.x, bottomright.y+1) + lineoffset, Vec2f(bottomright.x, bottomright.y + 1) + lineoffset, SColor(0xff404040));
+		GUI::DrawLine2D(Vec2f(topleft.x, bottomright.y) + lineoffset, bottomright + lineoffset, SColor(playercolour));
+		
+		string tex = p.getScoreboardTexture();
+		if(tex != "")
+		{
+			u16 frame = p.getScoreboardFrame();
+		    Vec2f framesize = p.getScoreboardFrameSize();
+			GUI::DrawIcon( tex, frame, framesize, topleft, 0.5f, p.getTeamNum() );
+		}
 
+		GUI::DrawText(p.getCharacterName(), topleft + Vec2f(20,0), SColor(playercolour));
 
-		//render the player + stats
-		u32 namecolour = getNameColour(p);
-		GUI::DrawText(playername, topleft + Vec2f(20, 0), SColor(namecolour));
-
-		GUI::DrawText("" + ping_in_ms, Vec2f(bottomright.x - 400, topleft.y), SColor(0xffffffff));
+		GUI::DrawText("" + s32(p.getPing()*1000.0f/30.0f), Vec2f(bottomright.x - 400, topleft.y), SColor(0xffffffff));
 		GUI::DrawText("" + p.getKills(), Vec2f(bottomright.x - 300, topleft.y), SColor(0xffffffff));
 		GUI::DrawText("" + p.getDeaths(), Vec2f(bottomright.x - 200, topleft.y), SColor(0xffffffff));
 		GUI::DrawText("" + formatFloat(getKDR(p), "", 3, 1), Vec2f(bottomright.x - 100, topleft.y), SColor(0xffffffff));
@@ -198,8 +161,6 @@ void onRender(CRules@ this)
 	CPlayer@ p = getLocalPlayer();
 
 	if (p is null || !p.isMyPlayer()) { return; }
-
-	GUI::SetFont("menu");
 
 	CBitStream serialised_team_hud;
 	this.get_CBitStream("tdm_serialised_team_hud", serialised_team_hud);

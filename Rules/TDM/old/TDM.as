@@ -14,7 +14,6 @@ string cost_config_file = "tdm_vars.cfg";
 void Config(TDMCore@ this)
 {
 	CRules@ rules = getRules();
-
 	//load cfg
 	if (rules.exists("tdm_costs_config"))
 		cost_config_file = rules.get_string("tdm_costs_config");
@@ -23,7 +22,7 @@ void Config(TDMCore@ this)
 	cfg.loadFile(cost_config_file);
 
 	//how long to wait for everyone to spawn in?
-	s32 warmUpTimeSeconds = cfg.read_s32("warmUpTimeSeconds", 5);
+	s32 warmUpTimeSeconds = cfg.read_s32("warmUpTimeSeconds", 0);
 	this.warmUpTime = (getTicksASecond() * warmUpTimeSeconds);
 	this.gametime = getGameTime() + this.warmUpTime;
 
@@ -40,7 +39,7 @@ void Config(TDMCore@ this)
 	this.spawnTime = (getTicksASecond() * spawnTimeSeconds);
 
 	//how many players have to be in for the game to start
-	this.minimum_players_in_team = 1;
+	this.minimum_players_in_team = 0;
 
 	//whether to scramble each game or not
 	this.scramble_teams = cfg.read_bool("scrambleTeams", true);
@@ -125,7 +124,7 @@ shared class TDMSpawns : RespawnSystem
 			}
 			if (player.getTeamNum() != int(p_info.team))
 			{
-				player.server_setTeamNum(p_info.team);
+				player.server_setTeamNum(-1);
 			}
 
 			// remove previous players blob
@@ -155,7 +154,9 @@ shared class TDMSpawns : RespawnSystem
 
 		if (force) { return true; }
 
-		return info.can_spawn_time == 0;
+		//return info.can_spawn_time == 0;
+		return true;
+
 	}
 
 	Vec2f getSpawnLocation(PlayerInfo@ p_info)
@@ -212,6 +213,7 @@ shared class TDMSpawns : RespawnSystem
 		TDM_core.rules.SyncToPlayer(propname, getPlayerByUsername(info.username));
 
 		info.can_spawn_time = 0;
+		
 	}
 
 	void AddPlayerToSpawn(CPlayer@ player)
@@ -291,9 +293,6 @@ shared class TDMCore : RulesCore
 		all_death_counts_as_kill = false;
 		sudden_death = false;
 
-		//use old trap block behaviour for map design's sake
-		_rules.Tag("old trap blocks");
-
 		sv_mapautocycle = true;
 	}
 
@@ -346,11 +345,19 @@ shared class TDMCore : RulesCore
 		{
 			gametime = getGameTime() + warmUpTime;
 			rules.set_u32("game_end_time", gametime + gameDuration);
-			rules.SetGlobalMessage("Not enough players in each team for the game to start.\nPlease wait for someone to join...");
+			rules.SetGlobalMessage("Not enough players to start.\nPlease wait for someone to join...");
 			tdm_spawns.force = true;
 		}
 		else if (rules.isMatchRunning())
 		{
+			if (rules.get_bool("need_it"))
+			{
+				TDMTeamInfo@ team = cast < TDMTeamInfo@ > (teams[0]);
+				rules.set_s32("AAPlayersCount", team.players_count);
+				print ("Wrote player count: " + team.players_count);
+				rules.set_bool("need_it", false);
+			}
+				
 			rules.SetGlobalMessage("");
 		}
 
@@ -445,13 +452,8 @@ shared class TDMCore : RulesCore
 
 	bool allTeamsHavePlayers()
 	{
-		for (uint i = 0; i < teams.length; i++)
-		{
-			if (teams[i].players_count < minimum_players_in_team)
-			{
-				return false;
-			}
-		}
+		if (teams[0].players_count <= 1)
+			return false;
 
 		return true;
 	}
@@ -477,21 +479,7 @@ shared class TDMCore : RulesCore
 
 		if (victim !is null)
 		{
-			if (killer !is null && killer.getTeamNum() != victim.getTeamNum())
-			{
-				addKill(killer.getTeamNum());
-			}
-			else if (all_death_counts_as_kill)
-			{
-				for (int i = 0; i < rules.getTeamsNum(); i++)
-				{
-					if (i != victim.getTeamNum())
-					{
-						addKill(i);
-					}
-				}
-			}
-
+			addKill(0);
 		}
 	}
 
@@ -589,6 +577,7 @@ shared class TDMCore : RulesCore
 		int winteamIndex = -1;
 		TDMTeamInfo@ winteam = null;
 		s8 team_wins_on_end = -1;
+		string winner;
 
 		int highkills = 0;
 		for (uint team_num = 0; team_num < teams.length; ++team_num)
@@ -618,50 +607,25 @@ shared class TDMCore : RulesCore
 			//clear the winning team - we'll find that ourselves
 			@winteam = null;
 			winteamIndex = -1;
-
 			//set up an array of which teams are alive
-			array<bool> teams_alive;
-			s32 teams_alive_count = 0;
-			for (int i = 0; i < teams.length; i++)
-				teams_alive.push_back(false);
-
-			//check with each player
-			for (int i = 0; i < getPlayersCount(); i++)
+			TDMTeamInfo@ team = cast < TDMTeamInfo@ > (teams[0]);
+			if (team.kills >= rules.get_s32("AAPlayersCount") - 1)
 			{
-				CPlayer@ p = getPlayer(i);
-				CBlob@ b = p.getBlob();
-				s32 team = p.getTeamNum();
-				if (b !is null && !b.hasTag("dead") && //blob alive
-				        team >= 0 && team < teams.length) //team sensible
+				winteamIndex = 0;
+				CBlob@[] blobs;
+				if (getBlobsByTag("player", @blobs))
 				{
-					if (!teams_alive[team])
+					for (uint i = 0; i < blobs.length; i++)
 					{
-						teams_alive[team] = true;
-						teams_alive_count++;
+						CBlob @b = blobs[i];
+						CPlayer@ p = b.getPlayer();
+						if (p !is null)
+						{
+							winner = b.getInventoryName();
+						}
 					}
 				}
 			}
-
-			//only one team remains!
-			if (teams_alive_count == 1)
-			{
-				for (int i = 0; i < teams.length; i++)
-				{
-					if (teams_alive[i])
-					{
-						@winteam = cast < TDMTeamInfo@ > (teams[i]);
-						winteamIndex = i;
-						team_wins_on_end = i;
-					}
-				}
-			}
-			//no teams survived, draw
-			if (teams_alive_count == 0)
-			{
-				winteamIndex = -1;
-				team_wins_on_end = -1;
-			}
-
 		}
 
 		rules.set_s8("team_wins_on_end", team_wins_on_end);
@@ -685,14 +649,15 @@ shared class TDMCore : RulesCore
 
 			rules.SetTeamWon(winteamIndex);   //game over!
 			rules.SetCurrentState(GAME_OVER);
-			rules.SetGlobalMessage(winteam.name + " wins the game!");
+			rules.SetGlobalMessage(winner + " wins the game!");
 		}
 	}
 
 	void addKill(int team)
 	{
-		if (team >= 0 && team < int(teams.length))
+		if (rules.isMatchRunning())
 		{
+			print("Added one kill");
 			TDMTeamInfo@ team_info = cast < TDMTeamInfo@ > (teams[team]);
 			team_info.kills++;
 		}
@@ -767,7 +732,6 @@ shared class TDMCore : RulesCore
 			}
 		}
 	}
-
 };
 
 //pass stuff to the core from each of the hooks
@@ -778,10 +742,12 @@ void Reset(CRules@ this)
 	TDMSpawns spawns();
 	TDMCore core(this, spawns);
 	Config(core);
-	//core.SetupBases();
+	core.SetupBases();
 	this.set("core", @core);
 	this.set("start_gametime", getGameTime() + core.warmUpTime);
 	this.set_u32("game_end_time", getGameTime() + core.gameDuration); //for TimeToEnd.as
+
+	this.set_bool("need_it", true);
 }
 
 void onRestart(CRules@ this)
