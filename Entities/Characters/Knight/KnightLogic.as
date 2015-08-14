@@ -8,6 +8,7 @@
 #include "Knocked.as"
 #include "Help.as";
 #include "Requirements.as"
+#include "Respawn.as"
 
 
 //attacks limited to the one time per-actor before reset.
@@ -719,6 +720,7 @@ f32 onHit(CBlob@ this, Vec2f worldPoint, Vec2f velocity, f32 damage, CBlob@ hitt
 		this.server_setTeamNum(hitterBlob.getTeamNum);
 		this.server_setHealth(this.getInitialHealth);
 		return 0.0f;
+		checkWin();
 	}
 	if (hitterBlob.getPosition().x < this.getPosition().x && hitterBlob.getName() == "knight") // knight and the left one (to play only once)
 	{
