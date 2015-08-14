@@ -15,20 +15,31 @@ int gameovertimer = 10;
 u32 limit = 11;
 void onTick(CRules@ this)
 {
-	u8 StartTeam;
+	
+	//u8 StartTeam;
+	
+	
+}
+void checkWin()
+{
+	CRules@ this = getRules();
 	CPlayer@[] players = collectPlayers(this);
-	for (uint i = 0; i < players.length; i++)
+	if(players.length >= 0 && players[1].getBlob() !is null)
 	{
-		if (i == 0){
-			StartTeam = players[0].getBlob().getTeamNum();
-		}
-		if (StartTeam != players[i].getBlob().getTeamNum())
+		for (uint i = 0; i < players.length; i++)
 		{
-			break;
-		}
-		if(i == players.length)
+		if (i == 0)
 		{
-			LoadNextMap();
+			u8 StartTeam = players[0].getBlob().getTeamNum();
+		}
+			if (players[0].getBlob().getTeamNum() != players[i].getBlob().getTeamNum())
+			{
+				break;
+			}
+			if(i == players.length)
+			{
+				LoadNextMap();
+			}
 		}
 	}
 }
