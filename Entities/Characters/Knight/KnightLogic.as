@@ -715,10 +715,10 @@ f32 onHit(CBlob@ this, Vec2f worldPoint, Vec2f velocity, f32 damage, CBlob@ hitt
 {
 	// play cling sound if other knight attacked us
 	// dmg could be taken out here if we ever want to
-	if (damage >= this.getHealth)
+	if (damage >= this.getHealth())
 	{
-		this.server_setTeamNum(hitterBlob.getTeamNum);
-		this.server_setHealth(this.getInitialHealth);
+		this.server_setTeamNum(hitterBlob.getTeamNum());
+		this.server_setHealth(this.getInitialHealth());
 		return 0.0f;
 		checkWin();
 	}
