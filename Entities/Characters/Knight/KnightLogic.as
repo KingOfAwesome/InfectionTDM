@@ -718,7 +718,7 @@ f32 onHit(CBlob@ this, Vec2f worldPoint, Vec2f velocity, f32 damage, CBlob@ hitt
 	if (damage >= this.getHealth())
 	{
 		this.server_setTeamNum(hitterBlob.getTeamNum());
-		this.server_setHealth(this.getInitialHealth());
+		this.server_SetHealth(this.getInitialHealth());
 		return 0.0f;
 		checkWin();
 	}
